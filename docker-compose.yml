@@ -1,0 +1,49 @@
+version: "3.8"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./app:/app
+    working_dir: /app/src
+    environment:
+      - MONGODB_URL=mongodb://${MONGODB_USER}:${MONGODB_PASSW}@mongo:27017
+      - PORT=8000
+    depends_on:
+      - mongo
+    links:
+      - mongo
+    ports:
+      - "8000:8000"
+    entrypoint: /bin/bash
+  mongo:
+    env_file:
+      - .env
+    image: mongo:latest
+    container_name: mongo
+    environment:
+        - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USER}
+        - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSW}
+    restart: unless-stopped
+    volumes:
+      - ./mongodb/db:/data/db
+
+  mongo-express:
+    env_file:
+      - .env
+    image: mongo-express
+    container_name: mexpress
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGODB_USER}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGODB_PASSW}
+      - ME_CONFIG_MONGODB_URL=mongodb://${MONGODB_USER}:${MONGODB_PASSW}@mongo:27017
+      - ME_CONFIG_BASICAUTH_USERNAME=${EXPRESS_USER}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${EXPRESS_PASSW}
+    links:
+      - mongo
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
